@@ -1,5 +1,4 @@
-﻿using System;
-namespace eCommerence.Core.Entities;
+﻿namespace eCommerence.Core.Entities;
 
 public class ApplicationUser
 {

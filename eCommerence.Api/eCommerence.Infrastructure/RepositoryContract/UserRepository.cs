@@ -1,27 +1,38 @@
-﻿using eCommerence.Core.DTO;
+﻿using Dapper;
+using eCommerence.Core.DTO;
 using eCommerence.Core.Entities;
 using eCommerence.Core.IRepositoryContract;
+using eCommerence.Infrastructure.DbContext;
+using static System.Net.Mime.MediaTypeNames;
+using System.Runtime.InteropServices;
 
 namespace eCommerence.Infrastructure.RepositoryContract;
 
-public class UserRepository : IUserRepository
+internal class UserRepository : IUserRepository
 {
-    public Task<ApplicationUser> AddUser(ApplicationUser user)
-    { 
-        user.Id = new Guid();
-        return Task.FromResult(user);
+    private readonly DapperDbContext _dbContext;
+    public UserRepository(DapperDbContext dbContext)
+    {
+        _dbContext = dbContext; 
+    }
+    public async Task<ApplicationUser?> AddUser(ApplicationUser user)
+    {
+        //Generate a new unique user ID for the user
+        user.Id = Guid.NewGuid();
+        // SQL Query to insert user data into the "Users" table.
+        string query = "INSERT INTO public.\"Users\" (\"Id\", \"Email\", \"PersonName\", \"Gender\", \"Password\") VALUES(@Id, @Email, @PersonName, @Gender, @Password)";
+        int numOfRowsAffected = await _dbContext.DbConnection.ExecuteAsync(query, user);
+        if (numOfRowsAffected > 0) return user;
+        return null;
     }
 
-    public Task<ApplicationUser> GetUserByEmailAndPassword(string Email, string Password)
+    public async Task<ApplicationUser?> GetUserByEmailAndPassword(string Email, string Password)
     {
-        ApplicationUser user =  new ApplicationUser()
-        {
-            Id = new Guid(),
-            Email = "m.seoud42@gmail.com",
-            Password = "test123@",
-            PersonName = "Mohamed Seoud",
-            Gender = GenderOption.Male.ToString(),
-        };
-        return Task.FromResult(user);
+        //SQL query to select a user by Email and Password
+        string query = "SELECT * FROM public.\"Users\" WHERE \"Email\"=@Email AND \"Password\"=@Password";
+        var loginParameters = new { Email = Email, Password = Password };
+        ApplicationUser? user = await _dbContext.DbConnection.QueryFirstOrDefaultAsync < ApplicationUser > (query, loginParameters);
+
+        return user;
     }
 }
