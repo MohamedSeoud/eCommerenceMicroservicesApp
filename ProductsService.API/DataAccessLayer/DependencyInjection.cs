@@ -1,6 +1,7 @@
-﻿using DataAccessLayer.Context;
+﻿
 using DataAccessLayer.Repository;
 using DataAccessLayer.RepositoryContract;
+using eCommerce.DataAccessLayer.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,8 +15,14 @@ public static class DependencyInjection
     {
         service.AddDbContext<ApplicationDbContext>(options =>
         {
-            options.UseMySQL(configuration.GetConnectionString("DefaultConnection"));
+            options.UseMySql(
+                configuration.GetConnectionString("DefaultConnection"),
+                ServerVersion.AutoDetect(configuration.GetConnectionString("DefaultConnection")),
+                o => o.EnableStringComparisonTranslations() // Enable translations for StringComparison
+            );
         });
+
+
         service.AddScoped<IProductRepository, ProductRepository>();
         return service;
     }

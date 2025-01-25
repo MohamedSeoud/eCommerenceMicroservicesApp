@@ -1,35 +1,39 @@
-using BussniessLogicLayer;
-using DataAccessLayer;
 using FluentValidation.AspNetCore;
-using ProductsService.API.Middlewares;
+using eCommerce.ProductsMicroService.API.APIEndpoints;
 using System.Text.Json.Serialization;
+using DataAccessLayer;
+using BussniessLogicLayer;
+using ProductsService.API.Middlewares;
+
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddAuthorization();
+
+//Add DAL and BLL services
 builder.Services.AddDataAccessLayer(builder.Configuration);
 builder.Services.AddBussinessLogicLayer();
-builder.Services.AddControllers().AddJsonOptions(options =>
-options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddControllers();
+builder.Services.AddAuthorization();
+
+//FluentValidations
 builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(builder =>
-    {
-        builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
-    });
+
+//Add model binder to read values from JSON to enum
+builder.Services.ConfigureHttpJsonOptions(options => { 
+  options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+
+
 var app = builder.Build();
 
 app.UseExceptionHandlingMiddleware();
 app.UseRouting();
-app.UseCors();
 
-
-
+//Auth
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapProductAPIEndpoints();
 
 app.Run();
